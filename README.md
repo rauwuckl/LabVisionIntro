@@ -1,5 +1,18 @@
 # Lab Vision Model Starter Pack
 
+## Running the model:
+
+After you have downloaded Spike (as outlined below), enter the "./Build" directory and use cmake to carry out the initial set-up. Finally make your model file and you can now execute it.
+
+To carry out this process, do the following in a terminal:
+
+>> cd LabVisionIntro/Build
+>> cmake ../
+>> make Gisi_Model -j8
+
+Finally execute the model:
+>> ./Gisi_Model
+
 
 ## Folders:
 

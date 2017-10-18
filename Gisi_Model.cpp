@@ -108,6 +108,8 @@ int main (int argc, char *argv[]){
 	 *
 	 */
 
+	int starting_epoch = 1;
+	int lr_stop_epoch = 200;
 	// Input of simulation name, number of epochs, and input folder name
 	std::string modelpath = "../";
 	std::string modelname = "Gisi_Model.cpp";
@@ -137,7 +139,7 @@ int main (int argc, char *argv[]){
 	float original_timestep = 0.00002;		// This value is the timestep used in Aki's spiking investigations
 
 	// These flags set how the experiment shall be run
-	bool simulate_network_to_test_untrained = false;
+	bool simulate_network_to_test_untrained = true;
 	bool simulate_network_to_train_network = true;
 	bool simulate_network_to_test_trained = true;
 	bool human_readable_storage = false;
@@ -471,6 +473,12 @@ int main (int argc, char *argv[]){
 	 *
 	 */
 
+	// Load any weights before finalising the model
+	if (starting_epoch != 1){	
+		std::string weightlocation = "output/";
+		weightlocation = "output/" + experimentName + "/" + "training/" + "epoch" + string(to_string(starting_epoch)) + "/" + "Synapses_NetworkWeights.bin";
+		load_weights(model, weightlocation, true);
+	}
 	model->finalise_model();
 
 	// Creating Relevant folders
@@ -485,6 +493,7 @@ int main (int argc, char *argv[]){
 	
 	Simulator_Options simulator_options_initial;
 	simulator_options_initial.run_simulation_general_options->presentation_time_per_stimulus_per_epoch = presentation_time_per_stimulus_per_epoch_test;
+	simulator_options_initial.run_simulation_general_options->apply_plasticity_to_relevant_synapses = false;
 	simulator_options_initial.stimuli_presentation_options->reset_model_state_between_each_stimulus = true;
 	simulator_options_initial.recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool = true;
 	simulator_options_initial.recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool = true;
@@ -526,7 +535,7 @@ int main (int argc, char *argv[]){
 	 */
 	
 	// Loop through the number of epochs
-	for (int g = 101; g <= number_of_epochs_train; g++){
+	for (int g = starting_epoch; g <= number_of_epochs_train; g++){
 
 		// Carry out training (as necessary)  
 		if (simulate_network_to_train_network) {
@@ -535,15 +544,10 @@ int main (int argc, char *argv[]){
 			equalize_rates(input_neurons, 0.1f);
 			input_neurons->copy_rates_to_device();
 
-			// Load weights from either the initial network run or from the previous training set
-			std::string weightlocation = "output/";
-			if (g == 1){
-				weightlocation = "output/" + experimentName + "/" + "initial/" + "Synapses_NetworkWeights.bin";
-			} else {
+			if (g != 1) 
 				STDP_PARAMS.learning_rate_rho = powf(1.1f, (g-1))*learning_rate_rho;
-				weightlocation = "output/" + experimentName + "/" + "training/" + "epoch" + string(to_string(g-1)) + "/" + "Synapses_NetworkWeights.bin";
-			}
-			load_weights(model, weightlocation, true);
+			if (g >= lr_stop_epoch)
+				STDP_PARAMS.learning_rate_rho = powf(1.1f, (lr_stop_epoch))*learning_rate_rho;
 
 			// Now create a set of options for this training epoch
 			Simulator_Options simulator_options_train;
@@ -581,25 +585,22 @@ int main (int argc, char *argv[]){
 			equalize_rates(input_neurons, 0.1f);
 			input_neurons->copy_rates_to_device();
 
-			// Load weights from the current set
-			std::string weightlocation = "output/";
-			weightlocation = "output/" + experimentName + "/" + "training/" + "epoch" + string(to_string(g)) + "/" + "Synapses_NetworkWeights.bin";
-			load_weights(model, weightlocation, true);
-
 			// Given that the weights shall still be those loaded when training, go ahead and carry out test
 			// Set up the options for the simulator as before
 			Simulator_Options simulator_options_test;
 			simulator_options_test.run_simulation_general_options->number_of_epochs = 1;
+			simulator_options_test.run_simulation_general_options->apply_plasticity_to_relevant_synapses = false;
 			simulator_options_test.stimuli_presentation_options->reset_model_state_between_each_stimulus = true;
 			simulator_options_test.run_simulation_general_options->presentation_time_per_stimulus_per_epoch = presentation_time_per_stimulus_per_epoch_test;
 			simulator_options_test.recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool = true;
 			simulator_options_test.recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool = true;
 			simulator_options_test.file_storage_options->save_recorded_neuron_spikes_to_file = true;
-			simulator_options_test.file_storage_options->write_initial_synaptic_weights_to_file_bool = true;
+			//simulator_options_test.file_storage_options->write_initial_synaptic_weights_to_file_bool = true;
 
 
 			simulator_options_test.file_storage_options->output_directory = "output/" + experimentName + "/testing/epoch" + string(to_string(g)) + "/" ;
-			simulator_options_test.recording_electrodes_options->network_state_archive_recording_electrodes_bool = true;
+			// The network state should already be recorded in the training folder
+			//simulator_options_test.recording_electrodes_options->network_state_archive_recording_electrodes_bool = true;
 			// simulator_options_train.recording_electrodes_options->network_state_archive_optional_parameters->human_readable_storage = true;
 			
 			// Finally create the Simulator and run this epoch of testing

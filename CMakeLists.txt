@@ -18,7 +18,7 @@ include_directories(BEFORE SYSTEM "${PROJECT_SOURCE_DIR}/Spike")
 
 # Add List of Executables
 foreach(model
-	Gisi_Model
+	Model
 	# Add more models here or change the names
     )
   add_executable(${model} ${model}.cpp)

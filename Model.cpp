@@ -132,8 +132,8 @@ int main (int argc, char *argv[]){
 
 	// Files/Paths relevent to the input set
 	std::string filepath = "../Data/MatlabGaborFilter/";
-	std::string test_filelist = "FileList_test_onlyLoc1.txt";
-	std::string train_filelist = "FileList_train_onlyLoc1.txt";
+	std::string test_filelist = "FileList_test_onlyLoc1_onlyCircle.txt";
+	std::string train_filelist = "FileList_train_onlyLoc1_onlyCircle.txt";
 
 	// Allow the user to input the number of epochs for which the network should be trained.
 	cout << "Enter the Name for the Experiment: \n";

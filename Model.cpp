@@ -128,14 +128,21 @@ void load_tree(std::string filename, pt::ptree & tree){
 }
 
 template <typename T>
-std::vector<T> as_vector(pt::ptree const& pt, string key)
+std::vector<T> as_vector(const pt::ptree &pt, string key)
 {
     std::vector<T> r;
-    for (auto& item : pt.get_child(key))
+    for (auto& item : pt.get_child(key)){
         r.push_back(item.second.get_value<T>());
-
-		for (T item: r){std::cout << "read " << item << endl;}
+		}
     return r;
+}
+
+template <typename T, unsigned L>
+void assert_array_equals_vector(const T (&arr)[L], const std::vector<T> &vec){
+	assert(L == vec.size());
+	for(int i=0; i<vec.size(); i++){
+		assert((vec[i] - arr[i]) < 1.0e-15);
+	}
 }
 
 
@@ -431,34 +438,40 @@ int main (int argc, char *argv[]){
 	// Biological Scaling Constant = How much you multiply the weights up or down for realism/stability
 	// If this value is roughly on the order of the Leakage Conductance, it will be close to one input spike -> one output spike (n.b. depends on syn tau)
 	float biological_conductance_scaling_constant_lambda_G2E_FF = 0.1 * 0.0001 * 0.00002; // << why product #TODO
-	float biological_conductance_scaling_constant_lambda_E2E_FF = 0.00005 * 0.00002;
+	// float old_biological_conductance_scaling_constant_lambda_E2E_FF = 0.00005 * 0.00002;
 	float biological_conductance_scaling_constant_lambda_E2E_FB = 0.1 * 0.0001 * 0.00002;
 	float biological_conductance_scaling_constant_lambda_E2E_L	= 0.000001 * 0.00002;
-	float biological_conductance_scaling_constant_lambda_E2I_L	= 0.001 * 0.00002;
-	float biological_conductance_scaling_constant_lambda_I2E_L	= 0.005 * 0.00002;
+	// float biological_conductance_scaling_constant_lambda_E2I_L	= 0.001 * 0.00002;
+	// float biological_conductance_scaling_constant_lambda_I2E_L	= 0.005 * 0.00002;
 
 
-	float layerwise_biological_conductance_scaling_constant_lambda_E2E_FF[number_of_layers-1] = {
-		0.625f * biological_conductance_scaling_constant_lambda_E2E_FF,
-		0.5f * biological_conductance_scaling_constant_lambda_E2E_FF,
-		0.75f * biological_conductance_scaling_constant_lambda_E2E_FF};//different for the different layers
+	// float layerwise_biological_conductance_scaling_constant_lambda_E2E_FF[number_of_layers-1] = {
+	// 	0.625f * biological_conductance_scaling_constant_lambda_E2E_FF,
+	// 	0.5f * biological_conductance_scaling_constant_lambda_E2E_FF,
+	// 	0.75f * biological_conductance_scaling_constant_lambda_E2E_FF};//different for the different layers
 
 
 	// check with the loaded one
-	std::vector<float> loaded_layerwise_conductance_E2E_FF = as_vector<float>(simulation_params, NETWORK_PARAMS "." LAYERWISE_BIO_CONDUCTANCE_SCALING "." E2E_FF);
+	std::vector<float> layerwise_conductance_scaling_E2E_FF = as_vector<float>(simulation_params, NETWORK_PARAMS "." LAYERWISE_BIO_CONDUCTANCE_SCALING "." E2E_FF);
+	// assert_array_equals_vector(layerwise_biological_conductance_scaling_constant_lambda_E2E_FF, layerwise_conductance_scaling_E2E_FF);
 
-	float layerwise_biological_conductance_scaling_constant_lambda_E2I_L[number_of_layers] = {
-		1.1f * biological_conductance_scaling_constant_lambda_E2I_L,
-		1.625f * biological_conductance_scaling_constant_lambda_E2I_L,
-		0.875f * biological_conductance_scaling_constant_lambda_E2I_L, // Layer 2 different and better performance
-		1.6f * biological_conductance_scaling_constant_lambda_E2I_L};
+	// float layerwise_biological_conductance_scaling_constant_lambda_E2I_L[number_of_layers] = {
+	// 	1.1f * biological_conductance_scaling_constant_lambda_E2I_L,
+	// 	1.625f * biological_conductance_scaling_constant_lambda_E2I_L,
+	// 	0.875f * biological_conductance_scaling_constant_lambda_E2I_L, // Layer 2 different and better performance
+	// 	1.6f * biological_conductance_scaling_constant_lambda_E2I_L};
 
-	float layerwise_biological_conductance_scaling_constant_lambda_I2E_L[number_of_layers] = {
-		0.04f * biological_conductance_scaling_constant_lambda_I2E_L,
-		0.375f * biological_conductance_scaling_constant_lambda_I2E_L,
-		0.2f * biological_conductance_scaling_constant_lambda_I2E_L, // Layer 2 different and better performance
-		0.325f * biological_conductance_scaling_constant_lambda_I2E_L};
+	std::vector<float> layerwise_conductance_scaling_E2I_L = as_vector<float>(simulation_params, NETWORK_PARAMS "." LAYERWISE_BIO_CONDUCTANCE_SCALING "." E2I_L);
+	// assert_array_equals_vector(layerwise_biological_conductance_scaling_constant_lambda_E2I_L, layerwise_conductance_scaling_E2I_L);
 
+	// float layerwise_biological_conductance_scaling_constant_lambda_I2E_L[number_of_layers] = {
+	// 	0.04f * biological_conductance_scaling_constant_lambda_I2E_L,
+	// 	0.375f * biological_conductance_scaling_constant_lambda_I2E_L,
+	// 	0.2f * biological_conductance_scaling_constant_lambda_I2E_L, // Layer 2 different and better performance
+	// 	0.325f * biological_conductance_scaling_constant_lambda_I2E_L};
+
+	std::vector<float> layerwise_conductance_scaling_I2E_L = as_vector<float>(simulation_params, NETWORK_PARAMS "." LAYERWISE_BIO_CONDUCTANCE_SCALING "." I2E_L);
+	// assert_array_equals_vector(layerwise_biological_conductance_scaling_constant_lambda_I2E_L, layerwise_conductance_scaling_I2E_L);
 
 	// Tau G = Synaptic Conductance Decay TIME CONSTANT for each synapse type (#1) (Seconds)
 	// Most of these values are set to 150ms for trace-like learning. Other than Exc->Inh and Inh->Exc
@@ -577,7 +590,7 @@ int main (int argc, char *argv[]){
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = E2E_FF_maxDelay;//10.0f*pow(10, -3);
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = fanInCount_E2E_FF;
-	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = biological_conductance_scaling_constant_lambda_E2E_FF;
+	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = -42; //this will be overwritten later biological_conductance_scaling_constant_lambda_E2E_FF;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.plasticity_vec.push_back(evans_stdp);
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.reversal_potential_Vhat = 0.0;
@@ -608,7 +621,7 @@ int main (int argc, char *argv[]){
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = E2I_L_maxDelay; //10.0f*pow(10, -3);
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = fanInCount_E2I_L;
-	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = biological_conductance_scaling_constant_lambda_E2I_L;
+	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = -42; // will be overwritten later biological_conductance_scaling_constant_lambda_E2I_L;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_E2I_L;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.reversal_potential_Vhat = 0.0;
@@ -655,17 +668,17 @@ int main (int argc, char *argv[]){
 				  &G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 		else{
 			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_E2E_FF[l-1];
-			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_biological_conductance_scaling_constant_lambda_E2E_FF[l-1];
+			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_conductance_scaling_E2E_FF[l-1];
 			for (int connection_number = 0; connection_number < max_number_of_connections_per_pair; connection_number++){
 				model->AddSynapseGroup(EXCITATORY_NEURONS[l-1], EXCITATORY_NEURONS[l], &E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 			}
 			if(E2E_FB_ON)
 				model->AddSynapseGroup(EXCITATORY_NEURONS[l], EXCITATORY_NEURONS[l-1], &E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 		}
-		E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_biological_conductance_scaling_constant_lambda_E2I_L[l];
+		E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_conductance_scaling_E2I_L[l];// layerwise_biological_conductance_scaling_constant_lambda_E2I_L[l];
 		model->AddSynapseGroup(EXCITATORY_NEURONS[l], INHIBITORY_NEURONS[l], &E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 		if (inh_layer_on[l]){
-			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_biological_conductance_scaling_constant_lambda_I2E_L[l];
+			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_conductance_scaling_I2E_L[l]; // layerwise_biological_conductance_scaling_constant_lambda_I2E_L[l];
 			model->AddSynapseGroup(INHIBITORY_NEURONS[l], EXCITATORY_NEURONS[l], &I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 		}
 		if(E2E_L_ON)

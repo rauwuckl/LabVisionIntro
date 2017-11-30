@@ -20,3 +20,5 @@
 
 	#define LAYERWISE_BIO_CONDUCTANCE_SCALING "layerwise_bio_conductance_scaling"
 		#define E2E_FF "e2e_ff"
+		#define E2I_L "e2i_l"
+		#define I2E_L "i2e_l"

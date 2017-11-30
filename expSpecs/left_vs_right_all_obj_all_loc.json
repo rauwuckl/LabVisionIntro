@@ -1,0 +1,5 @@
+{
+    "network_params_filename": "../netParams/default.json",
+    "training_stimuli_list": "train_left_vs_right_all.txt",
+    "testing_stimuli_list": "test_left_vs_right_all.txt"
+}

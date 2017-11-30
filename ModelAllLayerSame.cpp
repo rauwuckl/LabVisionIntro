@@ -127,18 +127,6 @@ void load_tree(std::string filename, pt::ptree & tree){
 		pt::read_json(filename, tree);
 }
 
-template <typename T>
-std::vector<T> as_vector(pt::ptree const& pt, string key)
-{
-    std::vector<T> r;
-    for (auto& item : pt.get_child(key))
-        r.push_back(item.second.get_value<T>());
-
-		for (T item: r){std::cout << "read " << item << endl;}
-    return r;
-}
-
-
 
 pt::ptree parse_argv(int argc, char *argv[]){
 	/*
@@ -173,12 +161,11 @@ pt::ptree parse_argv(int argc, char *argv[]){
 		{TRAINING_STIMULI_LIST, required_argument, 0, 'l'},
 		{TESTING_STIMULI_LIST, required_argument, 0, 'c'},
 		{LEARNING_RATE_INC_STOP, required_argument, 0, 'q'},
-		{START_EPOCH, required_argument, 0, 'b'},
 		{0,0,0,0}
 	};
 
 	while(true){
-		opt = getopt_long(argc, argv, "n:e:w:rt:s:p:l:c:q:b:a", long_options, &option_index);
+		opt = getopt_long(argc, argv, "n:e:w:rt:s:p:l:c:q:", long_options, &option_index);
 		if(-1 == opt) break;
 		switch (opt){
 			case 'n':
@@ -196,10 +183,6 @@ pt::ptree parse_argv(int argc, char *argv[]){
 			case 'r':
 				simulation_params.put(RECORD_SPIKES_IN_TRAINING, 1);
 				break;
-			case 'b':
-				simulation_params.put(START_EPOCH, atoi(optarg));
-			case 'a':
-				simulation_params.put(ALL_LAYER_SAME_FLAG, 1);
 			case 's':
 			{
 				std::string experiment_specs_filename = optarg;
@@ -252,10 +235,8 @@ pt::ptree parse_argv(int argc, char *argv[]){
 		simulation_params.put(TEST_EVERY_N_EPOCHS, 1);
 	}
 
-	if(!simulation_params.get_optional<int>(START_EPOCH)){
-		simulation_params.put(START_EPOCH, 1);
+	if(simulation_params.not_found() != simulation_params.find(EXPERIMENT_SPECS "_filename")){
 	}
-
 
 	if(
 		!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." NETWORK_PARAMS_FILENAME)||
@@ -437,27 +418,22 @@ int main (int argc, char *argv[]){
 	float biological_conductance_scaling_constant_lambda_E2I_L	= 0.001 * 0.00002;
 	float biological_conductance_scaling_constant_lambda_I2E_L	= 0.005 * 0.00002;
 
-
 	float layerwise_biological_conductance_scaling_constant_lambda_E2E_FF[number_of_layers-1] = {
-		0.625f * biological_conductance_scaling_constant_lambda_E2E_FF,
 		0.5f * biological_conductance_scaling_constant_lambda_E2E_FF,
-		0.75f * biological_conductance_scaling_constant_lambda_E2E_FF};//different for the different layers
-
-
-	// check with the loaded one
-	std::vector<float> loaded_layerwise_conductance_E2E_FF = as_vector<float>(simulation_params, NETWORK_PARAMS "." LAYERWISE_BIO_CONDUCTANCE_SCALING "." E2E_FF);
+		0.5f * biological_conductance_scaling_constant_lambda_E2E_FF,
+		0.5f * biological_conductance_scaling_constant_lambda_E2E_FF};//different for the different layers
 
 	float layerwise_biological_conductance_scaling_constant_lambda_E2I_L[number_of_layers] = {
-		1.1f * biological_conductance_scaling_constant_lambda_E2I_L,
-		1.625f * biological_conductance_scaling_constant_lambda_E2I_L,
+		0.875f * biological_conductance_scaling_constant_lambda_E2I_L,
+		0.875f * biological_conductance_scaling_constant_lambda_E2I_L,
 		0.875f * biological_conductance_scaling_constant_lambda_E2I_L, // Layer 2 different and better performance
-		1.6f * biological_conductance_scaling_constant_lambda_E2I_L};
+		0.875f * biological_conductance_scaling_constant_lambda_E2I_L};
 
 	float layerwise_biological_conductance_scaling_constant_lambda_I2E_L[number_of_layers] = {
-		0.04f * biological_conductance_scaling_constant_lambda_I2E_L,
-		0.375f * biological_conductance_scaling_constant_lambda_I2E_L,
+		0.2f * biological_conductance_scaling_constant_lambda_I2E_L,
+		0.2f * biological_conductance_scaling_constant_lambda_I2E_L,
 		0.2f * biological_conductance_scaling_constant_lambda_I2E_L, // Layer 2 different and better performance
-		0.325f * biological_conductance_scaling_constant_lambda_I2E_L};
+		0.2f * biological_conductance_scaling_constant_lambda_I2E_L};
 
 
 	// Tau G = Synaptic Conductance Decay TIME CONSTANT for each synapse type (#1) (Seconds)
@@ -737,9 +713,8 @@ int main (int argc, char *argv[]){
 	int number_of_epochs_train = simulation_params.get<int>(EPOCH_COUNT);
 	int test_network_every_n_epochs = simulation_params.get<int>(TEST_EVERY_N_EPOCHS);
 	int stop_lr_increase_epoch = simulation_params.get<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP);
-	int start_epoch = simulation_params.get<int>(START_EPOCH);
 
-	for (int g = start_epoch; g <= start_epoch + number_of_epochs_train; g++){
+	for (int g = 1; g <= number_of_epochs_train; g++){
 
 		/*
 		* TRAIN NETWORK

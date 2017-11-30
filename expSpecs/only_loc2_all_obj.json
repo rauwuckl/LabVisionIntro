@@ -1,0 +1,6 @@
+{
+    "network_params_filename": "params.json",
+    "training_stimuli_list": "train_only_loc2.txt",
+    "testing_stimuli_list": "test_only_loc2.txt",
+    "stop_lr_inc_epoch": 80
+}

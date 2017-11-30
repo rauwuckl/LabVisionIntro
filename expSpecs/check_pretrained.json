@@ -1,0 +1,6 @@
+{
+    "network_params_filename": "NotSpecified",
+    "training_stimuli_list": "NotSpecified",
+    "testing_stimuli_list": "NotSpecified",
+    "stop_lr_inc_epoch":  -1
+}

@@ -1,0 +1,5 @@
+{
+    "network_params_filename": "params.json",
+    "training_stimuli_list": "train_circle_both_loc.txt",
+    "testing_stimuli_list": "test_circle_both_loc.txt"
+}

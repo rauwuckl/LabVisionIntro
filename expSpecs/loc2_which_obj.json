@@ -1,0 +1,5 @@
+{
+    "network_params_filename": "params.json",
+    "training_stimuli_list": "train_loc2_which_obj_only_white.txt",
+    "testing_stimuli_list": "test_loc2_which_obj_only_white.txt"
+}

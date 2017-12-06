@@ -185,7 +185,7 @@ pt::ptree parse_argv(int argc, char *argv[]){
 	};
 
 	while(true){
-		opt = getopt_long(argc, argv, "n:e:w:rt:s:p:l:c:q:b:a", long_options, &option_index);
+		opt = getopt_long(argc, argv, "n:e:w:rt:s:p:l:c:q:b:", long_options, &option_index);
 		if(-1 == opt) break;
 		switch (opt){
 			case 'n':
@@ -205,8 +205,7 @@ pt::ptree parse_argv(int argc, char *argv[]){
 				break;
 			case 'b':
 				simulation_params.put(START_EPOCH, atoi(optarg));
-			case 'a':
-				simulation_params.put(ALL_LAYER_SAME_FLAG, 1);
+				break;
 			case 's':
 			{
 				std::string experiment_specs_filename = optarg;
@@ -377,7 +376,7 @@ int main (int argc, char *argv[]){
 
 	// Network Parameters
 	const int number_of_layers = 4;			// This value is explicitly assumed in this model. Not recommended to change unless you understand what else may need changing in this file.
-	int max_number_of_connections_per_pair = 2; // (redundant with the fan in Counts) The maximum number of connections refers to multiple synaptic contacts pre->post
+	// int max_number_of_connections_per_pair = 2; // (redundant with the fan in Counts) The maximum number of connections refers to multiple synaptic contacts pre->post
 	int dim_excit_layer = 64;			// The dimension of the excitatory layers (grid with this width)
 	int dim_inhib_layer = 32;			// The dimension of the inhibitory layers (as above)
 
@@ -385,25 +384,25 @@ int main (int argc, char *argv[]){
 	// FF = feed forward, L = Lateral, FB = Feedback
 
 	// Measure of the radius of the Fan-in
-	float gaussian_synapses_standard_deviation_G2E_FF =  4.0;
+	// float gaussian_synapses_standard_deviation_G2E_FF =  4.0;
 	float gaussian_synapses_standard_deviation_E2E_FF[number_of_layers-1] = {50.0, 50.0, 50.0}; // List for each layer, can be customized Seems VERY high
 	float gaussian_synapses_standard_deviation_E2E_FB = 8.0;
 	float gaussian_synapses_standard_deviation_E2E_L = 14.0;
-	float gaussian_synapses_standard_deviation_E2I_L = 4.0;
-	float gaussian_synapses_standard_deviation_I2E_L = 8.0;
+	// float gaussian_synapses_standard_deviation_E2I_L = 4.0; // one inhibitory neuron depends on very few excitatory neurons havily (higher chance of drawing the same pre neuron)
+	// float gaussian_synapses_standard_deviation_I2E_L = 8.0;
 
 	// Fan-in Number
-	int fanInCount_G2E_FF = 90;
-	int fanInCount_E2E_FF = 90;
+	// int fanInCount_G2E_FF = 90;
+	// int fanInCount_E2E_FF = 90; // replaced by a json parameter, actually has to be double because of the max_number_of_connections_per_pair=2
 	int fanInCount_E2E_FB = 5;
 	int fanInCount_E2E_L = 30;
-	int fanInCount_E2I_L = 60;
-	int fanInCount_I2E_L = 90; // <<<< used to be 90
+	// int fanInCount_E2I_L = 60;
+	// int fanInCount_I2E_L = 90; // <<<< used to be 90 // this seeems high. inhibition from 90 neurons seems high
 
-	if (fanInCount_E2E_FF % max_number_of_connections_per_pair!=0){
-		printf("total_number_of_new_synapses has to be a multiple of max_number_of_connections_per_pair");
-		return 0;
-	}
+	// if (fanInCount_E2E_FF % max_number_of_connections_per_pair!=0){
+	// 	printf("total_number_of_new_synapses has to be a multiple of max_number_of_connections_per_pair");
+	// 	return 0;
+	// }
 
 	// Synaptic Parameters
 	// Range of axonal transmission delay
@@ -573,12 +572,12 @@ int main (int argc, char *argv[]){
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[0] = timestep;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = timestep;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
-	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = fanInCount_G2E_FF;
+	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = simulation_params.get<int>(NETWORK_PARAMS "." FAN_IN_COUNT "." G2E_FF);//fanInCount_G2E_FF;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = biological_conductance_scaling_constant_lambda_G2E_FF;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
 	// In aki's model, learning on this set of synapses was off. Remove the line below to math that.
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.plasticity_vec.push_back(evans_stdp);
-	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_G2E_FF;
+	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = simulation_params.get<float>(NETWORK_PARAMS "." FAN_IN_STD "." G2E_FF);
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.reversal_potential_Vhat = 0.0; //Volts
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.decay_term_tau_g = decay_term_tau_g_G2E_FF;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.weight_range_bottom = weight_range_bottom;
@@ -589,7 +588,7 @@ int main (int argc, char *argv[]){
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[0] = E2E_FF_minDelay;//5.0*timestep;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = E2E_FF_maxDelay;//10.0f*pow(10, -3);
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
-	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = fanInCount_E2E_FF;
+	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = simulation_params.get<int>(NETWORK_PARAMS "." FAN_IN_COUNT "." E2E_FF);//  fanInCount_E2E_FF;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = -42; //this will be overwritten later biological_conductance_scaling_constant_lambda_E2E_FF;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
 	E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.plasticity_vec.push_back(evans_stdp);
@@ -620,10 +619,10 @@ int main (int argc, char *argv[]){
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[0] = E2I_L_minDelay; //5.0*timestep;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = E2I_L_maxDelay; //10.0f*pow(10, -3);
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
-	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = fanInCount_E2I_L;
+	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = simulation_params.get<int>(NETWORK_PARAMS "." FAN_IN_COUNT "." E2I_L);//fanInCount_E2I_L;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = -42; // will be overwritten later biological_conductance_scaling_constant_lambda_E2I_L;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
-	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_E2I_L;
+	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = simulation_params.get<float>(NETWORK_PARAMS "." FAN_IN_STD "." E2I_L);//gaussian_synapses_standard_deviation_E2I_L;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.reversal_potential_Vhat = 0.0;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.decay_term_tau_g = decay_term_tau_g_E2I_L;
 	E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.weight_range_bottom = weight_range_bottom;
@@ -633,10 +632,10 @@ int main (int argc, char *argv[]){
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[0] = I2E_L_minDelay;//5.0*timestep;
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = I2E_L_maxDelay;//3.0f*pow(10, -3);
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
-	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = fanInCount_I2E_L;
+	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = simulation_params.get<int>(NETWORK_PARAMS "." FAN_IN_COUNT "." I2E_L);// fanInCount_I2E_L;
 
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
-	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_I2E_L;
+	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = simulation_params.get<float>(NETWORK_PARAMS "." FAN_IN_STD "." I2E_L);//gaussian_synapses_standard_deviation_I2E_L;
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.reversal_potential_Vhat = -70.0*pow(10, -3);
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.decay_term_tau_g = decay_term_tau_g_I2E_L;
 	I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.weight_range_bottom = weight_range_bottom;
@@ -669,9 +668,9 @@ int main (int argc, char *argv[]){
 		else{
 			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_E2E_FF[l-1];
 			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_conductance_scaling_E2E_FF[l-1];
-			for (int connection_number = 0; connection_number < max_number_of_connections_per_pair; connection_number++){
+			// for (int connection_number = 0; connection_number < max_number_of_connections_per_pair; connection_number++){
 				model->AddSynapseGroup(EXCITATORY_NEURONS[l-1], EXCITATORY_NEURONS[l], &E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
-			}
+			// }
 			if(E2E_FB_ON)
 				model->AddSynapseGroup(EXCITATORY_NEURONS[l], EXCITATORY_NEURONS[l-1], &E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 		}

@@ -269,7 +269,7 @@ int main (int argc, char *argv[]){
 	std::cout << "parsing params done" << std::endl;
 
 	std::string modelpath = "../";
-	std::string modelname = "Model.cpp";
+	std::string modelname = "ModelAllLayerSame.cpp";
 	std::string output_folder_path = "../output/";
 
 	// Files/Paths relevent to the input set
@@ -714,7 +714,7 @@ int main (int argc, char *argv[]){
 	int test_network_every_n_epochs = simulation_params.get<int>(TEST_EVERY_N_EPOCHS);
 	int stop_lr_increase_epoch = simulation_params.get<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP);
 
-	for (int g = 1; g <= number_of_epochs_train; g++){
+	for (int g = 601; g <= 600 + number_of_epochs_train; g++){
 
 		/*
 		* TRAIN NETWORK

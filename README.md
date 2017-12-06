@@ -2,16 +2,17 @@
 
 ## Running the model:
 
-After you have downloaded Spike (as outlined below), enter the "./Build" directory and use cmake to carry out the initial set-up. Finally make your model file and you can now execute it.
 
-To carry out this process, do the following in a terminal:
+	Stuff changed so no it can be run for example like:
+	> ./Model -n white_diamond_l_vs_r_new_inh -s ../expSpecs/white_diamond_left_vs_right.json -b 40 -q 80 -e 200 -t 1 -p ../netParams/ALS_more_syn_new_inh.json
 
->> cd LabVisionIntro/Build
->> cmake ../
->> make Gisi_Model -j8
-
-Finally execute the model:
->> ./Gisi_Model
+  -n foldername
+	-s json file containing the training and testing list and net parameters
+	-b start with epoch 40
+	-q stop learning rate increasement at epoch 80
+	-e train for 200 epochs
+	-t test every epoch
+	-p overwrite parameters with this file (has to come after -s to overwrite those params)
 
 
 ## Folders:
@@ -32,7 +33,7 @@ Finally execute the model:
 		>>> cd Spike
 		>>> git checkout nas_fix
 	4) It is now recommended that you also turn off the error checking in the Spike code. This ensures that the speed of the simulator is high. To do this, modify the file located at: "Spike/Spike/Backend/CUDA/Helpers/ErrorCheck.hpp". Now comment out (by placing "//" at the start of the line), line number 10. I.e. "#define CUDA_ERROR_CHECK" -> "//#define CUDA_ERROR_CHECK".
-		N.B. if you decide to change any Spike code, it is recommended that you then turn this back on to check for errors. 
+		N.B. if you decide to change any Spike code, it is recommended that you then turn this back on to check for errors.
 
 ### ./Results
 	A folder created to copy results into. A set of example results from running 100 epochs is given.
@@ -40,7 +41,7 @@ Finally execute the model:
 
 ## Files:
 
-### ./CMakeLists.txt 
+### ./CMakeLists.txt
 	This file contains the details required by cmake (a tool designed to help package up software) to build a model with Spike
 	-> This file should be edited if you want to compile/use a new model file (or if you want to change the model name). On line 21, this file has a list of the models which will be available to be build. If (for example) you want to add a new model, just add its name here on a new line.
 
@@ -50,6 +51,3 @@ Finally execute the model:
 
 ### Parameters.md
 	A description of the set of parameters which affect the example model. These are named according to the variable which you can look for in the model example and are then followed by a description of their function.
-
-
-

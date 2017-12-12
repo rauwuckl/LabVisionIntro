@@ -158,7 +158,7 @@ pt::ptree parse_argv(int argc, char *argv[]){
 
 	auto update_network_params = [&network_params, &simulation_params](){
 		std::string network_params_filename = simulation_params.get<string>(EXPERIMENT_SPECS "." NETWORK_PARAMS_FILENAME);
-		std::cout << "Loading the file >" << network_params_filename << "< as network_params";
+		std::cout << "Loading the file >" << network_params_filename << "< as network_params\n";
 		load_tree(network_params_filename, network_params);
 	};
 
@@ -210,9 +210,9 @@ pt::ptree parse_argv(int argc, char *argv[]){
 			{
 				std::string experiment_specs_filename = optarg;
 				if(simulation_params.get_optional<string>(EXPERIMENT_SPECS)){
-					std::cout << "some experiment specifications have already been given. These will be overwritten by the file: "<< experiment_specs_filename << std::endl;
+					std::cout << "some experiment specifications have already been given. These will be overwritten by the file: "<< experiment_specs_filename <<"\n" << std::endl;
 				}
-				std::cout << "Loading experiment specifications (i.e. the network_params, training_stimuli_list and testing_stimuli_list) from the file >" << experiment_specs_filename << "<"<< std::endl;
+				std::cout << "Loading experiment specifications (i.e. the network_params, training_stimuli_list and testing_stimuli_list) from the file >" << experiment_specs_filename << "<\n"<< std::endl;
 				pt::ptree experiment_specs;
 				load_tree(experiment_specs_filename, experiment_specs);
 				simulation_params.add_child(EXPERIMENT_SPECS , experiment_specs);
@@ -242,19 +242,19 @@ pt::ptree parse_argv(int argc, char *argv[]){
 
 
 	if(simulation_params.not_found() == simulation_params.find(EXPERIMENT_NAME)){
-		std::cout << "Did not find parameter " EXPERIMENT_NAME << std::endl;
+		std::cout << "Did not find parameter " EXPERIMENT_NAME << "\n" << std::endl;
 		input_ok = false;
 	}
 	if(simulation_params.not_found() == simulation_params.find(EPOCH_COUNT)){
 		std::cout << "Did not find parameter " EPOCH_COUNT << std::endl;
 		if(simulation_params.not_found() != simulation_params.find(PRELOAD_WEIGHTS)){
-			std::cout << "Running only testing with the Preloaded weight file" << std::endl;
+			std::cout << "Running only testing with the Preloaded weight file \n" << std::endl;
 			simulation_params.put(EPOCH_COUNT, -1);
 		}
 		else input_ok = false;
 	}
 	if(simulation_params.not_found() == simulation_params.find(TEST_EVERY_N_EPOCHS)){
-		std::cout << "Did not find parameter " TEST_EVERY_N_EPOCHS " using default value 1"<< std::endl;
+		std::cout << "Did not find parameter " TEST_EVERY_N_EPOCHS " using default value 1 \n"<< std::endl;
 		simulation_params.put(TEST_EVERY_N_EPOCHS, 1);
 	}
 
@@ -290,8 +290,10 @@ pt::ptree parse_argv(int argc, char *argv[]){
  */
 int main (int argc, char *argv[]){
 
+
 	pt::ptree simulation_params = parse_argv(argc, argv);
 	std::cout << "parsing params done" << std::endl;
+
 
 	std::string modelpath = "../";
 	std::string modelname = "Model.cpp";
@@ -385,7 +387,7 @@ int main (int argc, char *argv[]){
 
 	// Measure of the radius of the Fan-in
 	// float gaussian_synapses_standard_deviation_G2E_FF =  4.0;
-	float gaussian_synapses_standard_deviation_E2E_FF[number_of_layers-1] = {50.0, 50.0, 50.0}; // List for each layer, can be customized Seems VERY high
+	// float gaussian_synapses_standard_deviation_E2E_FF[number_of_layers-1] = {50.0, 50.0, 50.0}; // List for each layer, can be customized Seems VERY high
 	float gaussian_synapses_standard_deviation_E2E_FB = 8.0;
 	float gaussian_synapses_standard_deviation_E2E_L = 14.0;
 	// float gaussian_synapses_standard_deviation_E2I_L = 4.0; // one inhibitory neuron depends on very few excitatory neurons havily (higher chance of drawing the same pre neuron)
@@ -666,7 +668,7 @@ int main (int argc, char *argv[]){
 				  EXCITATORY_NEURONS[l],
 				  &G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
 		else{
-			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = gaussian_synapses_standard_deviation_E2E_FF[l-1];
+			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_standard_deviation = simulation_params.get<float>(NETWORK_PARAMS "." FAN_IN_STD "." E2E_FF); //gaussian_synapses_standard_deviation_E2E_FF[l-1];
 			E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = layerwise_conductance_scaling_E2E_FF[l-1];
 			// for (int connection_number = 0; connection_number < max_number_of_connections_per_pair; connection_number++){
 				model->AddSynapseGroup(EXCITATORY_NEURONS[l-1], EXCITATORY_NEURONS[l], &E2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS);
@@ -839,6 +841,11 @@ int main (int argc, char *argv[]){
 			delete simulator_test;
 		}
 	}
+	// funal Code
+	cout << "before system call" << endl;
+	system(("/Users/clemens/.virtualenvs/myscipy/bin/python /Users/clemens/Documents/Code/AnalysisToolbox/spikeAnalysisToolsV2/quick_overview.py -n " + experimentName + " &").c_str());
+	cout << "after system call" << endl;
+
 
 	return 0;
 }

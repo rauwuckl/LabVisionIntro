@@ -1,0 +1,5 @@
+{
+    "network_params_filename": "../netParams/default.json",
+    "training_stimuli_list": "debug.txt",
+    "testing_stimuli_list": "debug.txt"
+}

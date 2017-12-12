@@ -1,6 +1,7 @@
 {
-    "network_params_filename": "NotSpecified",
+    "network_params_filename": "../netParams/default.json",
     "training_stimuli_list": "NotSpecified",
     "testing_stimuli_list": "NotSpecified",
-    "stop_lr_inc_epoch":  -1
+    "stop_lr_inc_epoch":  -1,
+    "epoch_count": -1
 }

@@ -181,15 +181,19 @@ pt::ptree parse_argv(int argc, char *argv[]){
 		{TESTING_STIMULI_LIST, required_argument, 0, 'c'},
 		{LEARNING_RATE_INC_STOP, required_argument, 0, 'q'},
 		{START_EPOCH, required_argument, 0, 'b'},
+		{ONLY_TEST_STIMULI_FOLDER, required_argument, 0, 'T'},
 		{0,0,0,0}
 	};
 
 	while(true){
-		opt = getopt_long(argc, argv, "n:e:w:rt:s:p:l:c:q:b:", long_options, &option_index);
+		opt = getopt_long(argc, argv, "n:e:w:rt:s:p:l:c:q:b:T:", long_options, &option_index);
 		if(-1 == opt) break;
 		switch (opt){
 			case 'n':
 				simulation_params.put(EXPERIMENT_NAME, optarg);
+				break;
+			case 'T':
+				simulation_params.put(ONLY_TEST_STIMULI_FOLDER, optarg);
 				break;
 			case 'e':
 				simulation_params.put(EPOCH_COUNT, atoi(optarg));
@@ -239,39 +243,53 @@ pt::ptree parse_argv(int argc, char *argv[]){
 		}
 	}
 	bool input_ok = true;
-
-
 	if(simulation_params.not_found() == simulation_params.find(EXPERIMENT_NAME)){
 		std::cout << "Did not find parameter " EXPERIMENT_NAME << "\n" << std::endl;
 		input_ok = false;
 	}
-	if(simulation_params.not_found() == simulation_params.find(EPOCH_COUNT)){
-		std::cout << "Did not find parameter " EPOCH_COUNT << std::endl;
-		if(simulation_params.not_found() != simulation_params.find(PRELOAD_WEIGHTS)){
-			std::cout << "Running only testing with the Preloaded weight file \n" << std::endl;
-			simulation_params.put(EPOCH_COUNT, -1);
+
+	if(simulation_params.get_optional<string>(ONLY_TEST_STIMULI_FOLDER)){
+		if(!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST)){
+			cout << TESTING_STIMULI_LIST << " has to be provided \n"<<endl;
+			input_ok = false;
 		}
-		else input_ok = false;
+		if(!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." NETWORK_PARAMS_FILENAME)){
+			cout << NETWORK_PARAMS << " has to be provided \n"<<endl;
+			input_ok = false;
+		}
 	}
-	if(simulation_params.not_found() == simulation_params.find(TEST_EVERY_N_EPOCHS)){
-		std::cout << "Did not find parameter " TEST_EVERY_N_EPOCHS " using default value 1 \n"<< std::endl;
-		simulation_params.put(TEST_EVERY_N_EPOCHS, 1);
+	else{
+		//actuall training
+		if(simulation_params.not_found() == simulation_params.find(EPOCH_COUNT)){
+			std::cout << "Did not find parameter " EPOCH_COUNT << std::endl;
+			if(simulation_params.not_found() != simulation_params.find(PRELOAD_WEIGHTS)){
+				std::cout << "Running only testing with the Preloaded weight file \n" << std::endl;
+				simulation_params.put(EPOCH_COUNT, -1);
+			}
+			else input_ok = false;
+		}
+		if(simulation_params.not_found() == simulation_params.find(TEST_EVERY_N_EPOCHS)){
+			std::cout << "Did not find parameter " TEST_EVERY_N_EPOCHS " using default value 1 \n"<< std::endl;
+			simulation_params.put(TEST_EVERY_N_EPOCHS, 1);
+		}
+
+		if(!simulation_params.get_optional<int>(START_EPOCH)){
+			simulation_params.put(START_EPOCH, 1);
+		}
+
+
+		if(
+			!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." NETWORK_PARAMS_FILENAME)||
+			!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST)||
+			!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST)||
+			!simulation_params.get_optional<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP)
+		){
+			std::cout << "One of " NETWORK_PARAMS_FILENAME " or " TRAINING_STIMULI_LIST " or " TESTING_STIMULI_LIST " or " LEARNING_RATE_INC_STOP " was not defined" << std::endl;
+		  input_ok = false;
+		}
 	}
 
-	if(!simulation_params.get_optional<int>(START_EPOCH)){
-		simulation_params.put(START_EPOCH, 1);
-	}
 
-
-	if(
-		!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." NETWORK_PARAMS_FILENAME)||
-		!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST)||
-		!simulation_params.get_optional<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST)||
-		!simulation_params.get_optional<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP)
-	){
-		std::cout << "One of " NETWORK_PARAMS_FILENAME " or " TRAINING_STIMULI_LIST " or " TESTING_STIMULI_LIST " or " LEARNING_RATE_INC_STOP " was not defined" << std::endl;
-	  input_ok = false;
-	}
 	if(!input_ok){exit(EXIT_FAILURE);}
 
 	std::cout << "Tau C: " << network_params.get<string>(STDP_TAU_C) << std::endl;
@@ -301,7 +319,12 @@ int main (int argc, char *argv[]){
 
 	// Files/Paths relevent to the input set
 	// std::string filepath_stimuli = "../Data/MatlabGaborFilter/Inputs_Gisi_BO/";
-	std::string filepath_stimuli = "../Data/MatlabGaborFilter/centered_inputs/";
+	std::string stimuli_folder = "training";
+	if(simulation_params.get_optional<string>(ONLY_TEST_STIMULI_FOLDER)){
+		stimuli_folder = simulation_params.get<string>(ONLY_TEST_STIMULI_FOLDER);
+	}
+
+	std::string filepath_stimuli = "../Data/MatlabGaborFilter/" + stimuli_folder + "/";
 
 	// Finally the experiment name is set up to be a combination of the stimulation name and number of epochs
 	string experimentName = get_time_string() + string("_") + simulation_params.get<std::string>(EXPERIMENT_NAME);
@@ -328,15 +351,19 @@ int main (int argc, char *argv[]){
 	dest.close();
 	srce.close();
 
-	//copy train list
-	source = filepath_stimuli + simulation_params.get<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST);
-	srce = ifstream(source.c_str(), ios::binary );
-	dest = ofstream((destination + "training_list.txt").c_str(), ios::binary);
-	dest << srce.rdbuf();
-	dest.close();
-	srce.close();
+	if(!simulation_params.get_optional<string>(ONLY_TEST_STIMULI_FOLDER)){
+		// if we are not only testing
+		//copy train list
+		source = filepath_stimuli + simulation_params.get<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST);
+		srce = ifstream(source.c_str(), ios::binary );
+		dest = ofstream((destination + "training_list.txt").c_str(), ios::binary);
+		dest << srce.rdbuf();
+		dest.close();
+		srce.close();
+	}
 
-	//copy train list
+
+	//copy test list
 	source = filepath_stimuli + simulation_params.get<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST);
 	srce = ifstream(source.c_str(), ios::binary );
 	dest = ofstream((destination + "testing_list.txt").c_str(), ios::binary);
@@ -747,105 +774,108 @@ int main (int argc, char *argv[]){
 	*
 	* TRAIN THE NETWORK AND TEST IN BETWEEN
 	*/
-	// Loop through the number of epochs
-	int number_of_epochs_train = simulation_params.get<int>(EPOCH_COUNT);
-	int test_network_every_n_epochs = simulation_params.get<int>(TEST_EVERY_N_EPOCHS);
-	int stop_lr_increase_epoch = simulation_params.get<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP);
-	int start_epoch = simulation_params.get<int>(START_EPOCH);
+	if(!simulation_params.get_optional<string>(ONLY_TEST_STIMULI_FOLDER)){
+		//but only if we are not in the 'test only mode'
 
-	for (int g = start_epoch; g <= start_epoch + number_of_epochs_train; g++){
+		// Loop through the number of epochs
+		int number_of_epochs_train = simulation_params.get<int>(EPOCH_COUNT);
+		int test_network_every_n_epochs = simulation_params.get<int>(TEST_EVERY_N_EPOCHS);
+		int stop_lr_increase_epoch = simulation_params.get<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP);
+		int start_epoch = simulation_params.get<int>(START_EPOCH);
 
-		/*
-		* TRAIN NETWORK
-		*/
+		for (int g = start_epoch; g <= start_epoch + number_of_epochs_train; g++){
 
-		// Load the desired input stimuli and equalize their rate
-		input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
-		equalize_rates(input_neurons, 0.1f);
-		input_neurons->copy_rates_to_device();
-
-		//increasing learning rate
-		float lr_tmp = learning_rate_rho;
-		if (g <= stop_lr_increase_epoch){
-			lr_tmp = powf(1.1f, (g-1)) * learning_rate_rho;
-		}
-		else {
-			lr_tmp = powf(1.1f, (stop_lr_increase_epoch)) * learning_rate_rho;
-			std::cout << "fixed learning rate" << std::endl;
-		}
-
-		std::cout << "Learning rate at Epoch " << g << " : " << lr_tmp << std::endl;
-
-		STDP_PARAMS.learning_rate_rho = lr_tmp;
-
-		//UGLY #TODO
-		bool save_spikes_while_training = false;
-		auto optional_save_spikes_while_training = simulation_params.get_optional<int>(RECORD_SPIKES_IN_TRAINING);
-		if(optional_save_spikes_while_training && *optional_save_spikes_while_training==1) save_spikes_while_training=true;
-
-		// Now create a set of options for this training epoch
-		Simulator_Options simulator_options_train;
-		simulator_options_train.run_simulation_general_options->apply_plasticity_to_relevant_synapses = true;
-		simulator_options_train.run_simulation_general_options->number_of_epochs = 1;
-		simulator_options_train.run_simulation_general_options->presentation_time_per_stimulus_per_epoch = presentation_time_per_stimulus_per_epoch_train;
-		simulator_options_train.run_simulation_general_options->stimulus_presentation_order_seed = g;
-
-		// Set the output folder for this epoch
-		simulator_options_train.file_storage_options->output_directory = output_folder_path + experimentName + "/training/epoch" + string(to_string(g)) + "/";
-		simulator_options_train.recording_electrodes_options->network_state_archive_optional_parameters->human_readable_storage = human_readable_storage;
-
-		simulator_options_train.recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool = save_spikes_while_training;
-		simulator_options_train.recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool = save_spikes_while_training;
-		simulator_options_train.file_storage_options->save_recorded_neuron_spikes_to_file = save_spikes_while_training;
-
-		simulator_options_train.stimuli_presentation_options->presentation_format = PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_OBJECTS;
-		simulator_options_train.stimuli_presentation_options->object_order = OBJECT_ORDER_RANDOM;
-		simulator_options_train.stimuli_presentation_options->transform_order = TRANSFORM_ORDER_RANDOM;
-
-		// Now finally, create the Simulator and run this epoch of training
-		Simulator* simulator_train = new Simulator(model, &simulator_options_train);
-		simulator_train->RunSimulation();
-		delete simulator_train;
-
-
-
-		if (g % test_network_every_n_epochs == 0 || g == number_of_epochs_train) {
+			/*
+			* TRAIN NETWORK
+			*/
 
 			// Load the desired input stimuli and equalize their rate
-			input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
+			input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
 			equalize_rates(input_neurons, 0.1f);
 			input_neurons->copy_rates_to_device();
 
-			// Given that the weights shall still be those loaded when training, go ahead and carry out test
-			// Set up the options for the simulator as before
-			Simulator_Options simulator_options_test;
-			simulator_options_test.run_simulation_general_options->number_of_epochs = 1;
-			simulator_options_test.run_simulation_general_options->apply_plasticity_to_relevant_synapses = false;
-			simulator_options_test.stimuli_presentation_options->reset_model_state_between_each_stimulus = true;
-			simulator_options_test.run_simulation_general_options->presentation_time_per_stimulus_per_epoch = presentation_time_per_stimulus_per_epoch_test;
-			simulator_options_test.recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool = true;
-			simulator_options_test.recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool = true;
-			simulator_options_test.recording_electrodes_options->network_state_archive_recording_electrodes_bool = true; // write the network architecture to file, AND THE SO FAR LEARNED WEIGHTS
-			simulator_options_test.file_storage_options->save_recorded_neuron_spikes_to_file = true;
-			//simulator_options_test.file_storage_options->write_initial_synaptic_weights_to_file_bool = true;
+			//increasing learning rate
+			float lr_tmp = learning_rate_rho;
+			if (g <= stop_lr_increase_epoch){
+				lr_tmp = powf(1.1f, (g-1)) * learning_rate_rho;
+			}
+			else {
+				lr_tmp = powf(1.1f, (stop_lr_increase_epoch)) * learning_rate_rho;
+				std::cout << "fixed learning rate" << std::endl;
+			}
+
+			std::cout << "Learning rate at Epoch " << g << " : " << lr_tmp << std::endl;
+
+			STDP_PARAMS.learning_rate_rho = lr_tmp;
+
+			//UGLY #TODO
+			bool save_spikes_while_training = false;
+			auto optional_save_spikes_while_training = simulation_params.get_optional<int>(RECORD_SPIKES_IN_TRAINING);
+			if(optional_save_spikes_while_training && *optional_save_spikes_while_training==1) save_spikes_while_training=true;
+
+			// Now create a set of options for this training epoch
+			Simulator_Options simulator_options_train;
+			simulator_options_train.run_simulation_general_options->apply_plasticity_to_relevant_synapses = true;
+			simulator_options_train.run_simulation_general_options->number_of_epochs = 1;
+			simulator_options_train.run_simulation_general_options->presentation_time_per_stimulus_per_epoch = presentation_time_per_stimulus_per_epoch_train;
+			simulator_options_train.run_simulation_general_options->stimulus_presentation_order_seed = g;
+
+			// Set the output folder for this epoch
+			simulator_options_train.file_storage_options->output_directory = output_folder_path + experimentName + "/training/epoch" + string(to_string(g)) + "/";
+			simulator_options_train.recording_electrodes_options->network_state_archive_optional_parameters->human_readable_storage = human_readable_storage;
+
+			simulator_options_train.recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool = save_spikes_while_training;
+			simulator_options_train.recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool = save_spikes_while_training;
+			simulator_options_train.file_storage_options->save_recorded_neuron_spikes_to_file = save_spikes_while_training;
+
+			simulator_options_train.stimuli_presentation_options->presentation_format = PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_OBJECTS;
+			simulator_options_train.stimuli_presentation_options->object_order = OBJECT_ORDER_RANDOM;
+			simulator_options_train.stimuli_presentation_options->transform_order = TRANSFORM_ORDER_RANDOM;
+
+			// Now finally, create the Simulator and run this epoch of training
+			Simulator* simulator_train = new Simulator(model, &simulator_options_train);
+			simulator_train->RunSimulation();
+			delete simulator_train;
 
 
-			simulator_options_test.file_storage_options->output_directory = output_folder_path + experimentName + "/testing/epoch" + string(to_string(g)) + "/" ;
-			// The network state should already be recorded in the training folder
-			//simulator_options_test.recording_electrodes_options->network_state_archive_recording_electrodes_bool = true;
-			// simulator_options_train.recording_electrodes_options->network_state_archive_optional_parameters->human_readable_storage = true;
 
-			// Finally create the Simulator and run this epoch of testing
-			Simulator* simulator_test = new Simulator(model, &simulator_options_test);
-			simulator_test->RunSimulation();
-			delete simulator_test;
+			if (g % test_network_every_n_epochs == 0 || g == number_of_epochs_train) {
+
+				// Load the desired input stimuli and equalize their rate
+				input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
+				equalize_rates(input_neurons, 0.1f);
+				input_neurons->copy_rates_to_device();
+
+				// Given that the weights shall still be those loaded when training, go ahead and carry out test
+				// Set up the options for the simulator as before
+				Simulator_Options simulator_options_test;
+				simulator_options_test.run_simulation_general_options->number_of_epochs = 1;
+				simulator_options_test.run_simulation_general_options->apply_plasticity_to_relevant_synapses = false;
+				simulator_options_test.stimuli_presentation_options->reset_model_state_between_each_stimulus = true;
+				simulator_options_test.run_simulation_general_options->presentation_time_per_stimulus_per_epoch = presentation_time_per_stimulus_per_epoch_test;
+				simulator_options_test.recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool = true;
+				simulator_options_test.recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool = true;
+				simulator_options_test.recording_electrodes_options->network_state_archive_recording_electrodes_bool = true; // write the network architecture to file, AND THE SO FAR LEARNED WEIGHTS
+				simulator_options_test.file_storage_options->save_recorded_neuron_spikes_to_file = true;
+				//simulator_options_test.file_storage_options->write_initial_synaptic_weights_to_file_bool = true;
+
+
+				simulator_options_test.file_storage_options->output_directory = output_folder_path + experimentName + "/testing/epoch" + string(to_string(g)) + "/" ;
+				// The network state should already be recorded in the training folder
+				//simulator_options_test.recording_electrodes_options->network_state_archive_recording_electrodes_bool = true;
+				// simulator_options_train.recording_electrodes_options->network_state_archive_optional_parameters->human_readable_storage = true;
+
+				// Finally create the Simulator and run this epoch of testing
+				Simulator* simulator_test = new Simulator(model, &simulator_options_test);
+				simulator_test->RunSimulation();
+				delete simulator_test;
+			}
 		}
+		// funal Code
+		cout << "before system call" << endl;
+		system(("/Users/clemens/.virtualenvs/myscipy/bin/python /Users/clemens/Documents/Code/AnalysisToolbox/spikeAnalysisToolsV2/quick_overview.py -n " + experimentName + " &").c_str());
+		cout << "after system call" << endl;
 	}
-	// funal Code
-	cout << "before system call" << endl;
-	system(("/Users/clemens/.virtualenvs/myscipy/bin/python /Users/clemens/Documents/Code/AnalysisToolbox/spikeAnalysisToolsV2/quick_overview.py -n " + experimentName + " &").c_str());
-	cout << "after system call" << endl;
-
 
 	return 0;
 }

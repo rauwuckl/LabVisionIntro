@@ -5,7 +5,8 @@
 #define TEST_EVERY_N_EPOCHS "test_every_n_epochs"
 #define RECORD_SPIKES_IN_TRAINING "record_spikes_in_training"
 #define START_EPOCH "start_epoch"
-#define ALL_LAYER_SAME_FLAG "all_layer_same_parameters"
+#define ONLY_TEST_STIMULI_FOLDER "only_test_stimuli_folder"
+// #define ALL_LAYER_SAME_FLAG "all_layer_same_parameters"
 
 #define EXPERIMENT_SPECS "experiment_specs"
 	//part of experiment_specs

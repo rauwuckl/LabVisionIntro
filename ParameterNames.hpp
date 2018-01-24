@@ -14,10 +14,13 @@
 	#define TRAINING_STIMULI_LIST "training_stimuli_list"
 	#define TESTING_STIMULI_LIST "testing_stimuli_list"
 	#define LEARNING_RATE_INC_STOP "stop_lr_inc_epoch"
+	#define STIMULI_FOLDER "stimuli_folder" //optional
+	#define NOISE_STIMULI "noise_stimuli"
 
 #define NETWORK_PARAMS "network_params"// theses are actually internally stored in a separte ptree for no great reason whatsoever
   #define STDP_TAU_C "STDP_Tau_C"
   #define STDP_TAU_D "STDP_Tau_D"
+	#define AVG_RATE_STIMULI "avg_rate_stimuli"
 
 	// These terms are the same for dfferent layerwise stuff
 	#define E2E_FF "e2e_ff"

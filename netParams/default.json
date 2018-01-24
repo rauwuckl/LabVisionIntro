@@ -1,6 +1,7 @@
 {
   "STDP_Tau_C": 0.05,
   "STDP_Tau_D": 0.05,
+  "avg_rate_stimuli": 0.1,
   "layerwise_bio_conductance_scaling": {
     "e2e_ff": [6.25e-10, 5e-10, 7.500000000000001e-10],
     "e2i_l": [2.2000000000000002e-08, 3.25e-08, 1.75e-08, 3.2e-08],

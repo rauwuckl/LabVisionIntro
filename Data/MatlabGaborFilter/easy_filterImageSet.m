@@ -1,4 +1,4 @@
-function [] = filterImageSet(inputDirectory)
+function [] = easy_filterImageSet(inputDirectory)
 %% JI INSTRUCTIONS FOR SPIKE
 % 1. In MatlabGaborFilter directory create Input directory
 % 2. Within Input directory create Images directory with images to be filtered

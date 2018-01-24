@@ -1,0 +1,7 @@
+{
+    "network_params_filename": "../netParams/ALS_more_syn_new_inh_higher_input_rate.json",
+    "training_stimuli_list": "all_noise_short.txt",
+    "testing_stimuli_list": "empty.txt",
+    "stimuli_folder": "noise2",
+    "noise_stimuli": 1
+}

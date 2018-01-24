@@ -320,6 +320,14 @@ int main (int argc, char *argv[]){
 	// Files/Paths relevent to the input set
 	// std::string filepath_stimuli = "../Data/MatlabGaborFilter/Inputs_Gisi_BO/";
 	std::string stimuli_folder = "training";
+
+	if(simulation_params.get_optional<string>(EXPERIMENT_SPECS "." STIMULI_FOLDER)){
+		stimuli_folder = simulation_params.get<string>(EXPERIMENT_SPECS "." STIMULI_FOLDER);
+		cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+		cout << "!! using unusual stimuli folder: "<< stimuli_folder << endl;
+		cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+	}
+
 	if(simulation_params.get_optional<string>(ONLY_TEST_STIMULI_FOLDER)){
 		stimuli_folder = simulation_params.get<string>(ONLY_TEST_STIMULI_FOLDER);
 	}
@@ -338,8 +346,6 @@ int main (int argc, char *argv[]){
 	// Creating Relevant folders
 	Simulator::CreateDirectoryForSimulationDataFiles(experimentName, output_folder_path);
 	std::cout << "Created folder " << output_folder_path << "  " <<  experimentName << std::endl;
-	Simulator::CreateDirectoryForSimulationDataFiles(experimentName + "/training", output_folder_path);
-	Simulator::CreateDirectoryForSimulationDataFiles(experimentName + "/testing", output_folder_path);
 	// Copy the model to your output folder (for future reference)
 	std::string source = modelpath + modelname;
 	std::string destination = output_folder_path + experimentName+"/";
@@ -523,6 +529,15 @@ int main (int argc, char *argv[]){
 
 	LIFSpikingNeurons* lif_spiking_neurons = new LIFSpikingNeurons();
 	ImagePoissonInputSpikingNeurons* input_neurons = new ImagePoissonInputSpikingNeurons();
+
+	// Optionally make the input_neurons ignore the files and have random rates instead
+	// I.e. if we set this flag each stimulus will be random noise, instead of what is actually in the file
+	auto noise_stimuli_flag = simulation_params.get_optional<int>(EXPERIMENT_SPECS "." NOISE_STIMULI);
+	if(noise_stimuli_flag && (*noise_stimuli_flag == 1)){
+		input_neurons->make_stimuli_as_random_noise = true;
+	}
+
+
 	ConductanceSpikingSynapses* conductance_spiking_synapses = new ConductanceSpikingSynapses();
 
 	model->spiking_neurons = lif_spiking_neurons;
@@ -732,6 +747,7 @@ int main (int argc, char *argv[]){
 	model->finalise_model();
 
 
+	float avg_rate_stimuli = simulation_params.get<float>(NETWORK_PARAMS "." AVG_RATE_STIMULI);
 
 	/*
 	 *	INITIAL TESTING
@@ -758,7 +774,7 @@ int main (int argc, char *argv[]){
 
 	// Load the desired input stimuli and equalize their rate
 	input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
-	equalize_rates(input_neurons, 0.1f);
+	equalize_rates(input_neurons, avg_rate_stimuli);
 	input_neurons->copy_rates_to_device();
 
 	// Run the untrained initial network
@@ -783,6 +799,9 @@ int main (int argc, char *argv[]){
 		int stop_lr_increase_epoch = simulation_params.get<int>(EXPERIMENT_SPECS "." LEARNING_RATE_INC_STOP);
 		int start_epoch = simulation_params.get<int>(START_EPOCH);
 
+		Simulator::CreateDirectoryForSimulationDataFiles(experimentName + "/training", output_folder_path);
+		Simulator::CreateDirectoryForSimulationDataFiles(experimentName + "/testing", output_folder_path);
+
 		for (int g = start_epoch; g <= start_epoch + number_of_epochs_train; g++){
 
 			/*
@@ -791,7 +810,7 @@ int main (int argc, char *argv[]){
 
 			// Load the desired input stimuli and equalize their rate
 			input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TRAINING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
-			equalize_rates(input_neurons, 0.1f);
+			equalize_rates(input_neurons, avg_rate_stimuli);
 			input_neurons->copy_rates_to_device();
 
 			//increasing learning rate
@@ -843,7 +862,7 @@ int main (int argc, char *argv[]){
 
 				// Load the desired input stimuli and equalize their rate
 				input_neurons->set_up_rates(simulation_params.get<string>(EXPERIMENT_SPECS "." TESTING_STIMULI_LIST).c_str(), "FilterParameters.txt", filepath_stimuli.c_str(), max_FR_of_input_Gabor);
-				equalize_rates(input_neurons, 0.1f);
+				equalize_rates(input_neurons, avg_rate_stimuli);
 				input_neurons->copy_rates_to_device();
 
 				// Given that the weights shall still be those loaded when training, go ahead and carry out test

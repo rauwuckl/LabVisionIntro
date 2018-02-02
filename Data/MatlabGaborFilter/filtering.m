@@ -98,6 +98,8 @@ function [dim,FI,GF] = filtering(file, psi, scale, orient, bw, gamma, set)
 
                 % Create Gabor Filter
                 GF{s,o,p} = double(gabor_fn(bw,gamma,psi(p),scale(s),orient(o)));
+                disp('Gabor filter Kernel shape: ');
+                disp(size(GF{s,o,p}));
 
                 % COMMENTED OUT
                 % 03.06.11 by Bedeho Mender

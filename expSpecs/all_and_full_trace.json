@@ -1,0 +1,6 @@
+{
+    "network_params_filename": "../netParams/ALS_more_syn_new_inh.json",
+    "training_stimuli_list": "train_all_with_full_trace.txt",
+    "testing_stimuli_list": "test_left_vs_right_all.txt",
+    "stimuli_folder": "training_with_full"
+}

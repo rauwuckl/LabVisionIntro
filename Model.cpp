@@ -509,6 +509,8 @@ int main (int argc, char *argv[]){
 
 	// Tau G = Synaptic Conductance Decay TIME CONSTANT for each synapse type (#1) (Seconds)
 	// Most of these values are set to 150ms for trace-like learning. Other than Exc->Inh and Inh->Exc
+  
+
 	float decay_term_tau_g_G2E_FF	=	0.15;
 	float decay_term_tau_g_E2E_FF	=	0.15;
 	float decay_term_tau_g_E2E_FB	=	0.15;

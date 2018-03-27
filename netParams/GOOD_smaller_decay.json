@@ -2,14 +2,14 @@
   "STDP_Tau_C": 0.005,
   "STDP_Tau_D": 0.005,
   "learning_rate": 0.001,
-  "all_synapses_decay_tau": 0.15,
-  "avg_rate_stimuli": 0.1,
+  "all_synapses_decay_tau": 0.03,
+  "avg_rate_stimuli": 0.10,
   "timestep": 2.0e-4,
   "layerwise_bio_conductance_scaling": {
     "e2e_ff": [
-      5e-10,
-      5e-10,
-      5e-10
+      25e-10,
+      25e-10,
+      25e-10
     ],
     "e2i_l": [
       1.75e-08,
@@ -23,9 +23,9 @@
       2.0000000000000004e-08,
       2.0000000000000004e-08
     ],
-    "g2e_ff": 2.0e-10,
-    "e2e_fb": 2.0e-10,
-    "e2e_l":  2.0e-11
+    "g2e_ff": 10.0e-10,
+    "e2e_fb": 10.0e-10,
+    "e2e_l":  10.0e-11
   },
   "fan_in_count": {
     "e2e_ff": 180,

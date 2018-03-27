@@ -18,6 +18,8 @@
 	#define NOISE_STIMULI "noise_stimuli"
 
 #define NETWORK_PARAMS "network_params"// theses are actually internally stored in a separte ptree for no great reason whatsoever
+	#define ALL_SYN_TAU "all_synapses_decay_tau" //decay term tau for all synapses types apart from e2i and i2e
+
   #define STDP_TAU_C "STDP_Tau_C"
   #define STDP_TAU_D "STDP_Tau_D"
 	#define AVG_RATE_STIMULI "avg_rate_stimuli"
@@ -31,3 +33,7 @@
 	#define LAYERWISE_BIO_CONDUCTANCE_SCALING "layerwise_bio_conductance_scaling"
 	#define FAN_IN_COUNT "fan_in_count"
 	#define FAN_IN_STD "fan_in_std"
+
+	#define TIMESTEP "timestep"
+
+	#define LEARNING_RATE "learning_rate"

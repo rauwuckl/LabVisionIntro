@@ -389,7 +389,7 @@ int main (int argc, char *argv[]){
 	const float presentation_time_per_stimulus_per_epoch_test = 2.0f; // seconds
 	float presentation_time_per_stimulus_per_epoch_train = 0.2f; // 4.0f didn't really work; //used to be 2.0//0.2;//2.0f; // seconds
 
-	float timestep = 0.0002;
+	// float timestep = 0.0002;
 	// float original_timestep = 0.00002;		// This value is the timestep used in Aki's spiking investigations
 	bool human_readable_storage = false;
 
@@ -442,14 +442,15 @@ int main (int argc, char *argv[]){
 	// Synaptic Parameters
 	// Range of axonal transmission delay
 	// timestep is defined above
-	float min_delay = 5.0*timestep; // In timesteps
+	float min_delay = 5.0*0.0002; // 0.0002 = timestep for gisbert; // In timesteps
 	float max_delay = 0.01; // In seconds (10ms)
 	float max_FR_of_input_Gabor = 100.0f; // Hz
 	float absolute_refractory_period = 0.002; // s
 	//Synaptic Parameters
 	float weight_range_bottom = 0.0;
 	float weight_range_top = 1.0;
-	float learning_rate_rho = 0.001f;
+
+	float learning_rate_rho = simulation_params.get<float>(NETWORK_PARAMS "." LEARNING_RATE); // 0.001f;
 
 	// int stop_lr_increase_epoch = 75;
 
@@ -471,7 +472,8 @@ int main (int argc, char *argv[]){
 
 	// Biological Scaling Constant = How much you multiply the weights up or down for realism/stability
 	// If this value is roughly on the order of the Leakage Conductance, it will be close to one input spike -> one output spike (n.b. depends on syn tau)
-	float biological_conductance_scaling_constant_lambda_G2E_FF = 0.1 * 0.0001 * 0.00002; // << why product #TODO
+
+	std::cout << "avg input rate: " << simulation_params.get<float>(NETWORK_PARAMS "." AVG_RATE_STIMULI);
 	// float old_biological_conductance_scaling_constant_lambda_E2E_FF = 0.00005 * 0.00002;
 	float biological_conductance_scaling_constant_lambda_E2E_FB = 0.1 * 0.0001 * 0.00002;
 	float biological_conductance_scaling_constant_lambda_E2E_L	= 0.000001 * 0.00002;
@@ -509,12 +511,12 @@ int main (int argc, char *argv[]){
 
 	// Tau G = Synaptic Conductance Decay TIME CONSTANT for each synapse type (#1) (Seconds)
 	// Most of these values are set to 150ms for trace-like learning. Other than Exc->Inh and Inh->Exc
-  
+  float universal_decay_term_tau_all_synapses = simulation_params.get<float>(NETWORK_PARAMS "." ALL_SYN_TAU);
 
-	float decay_term_tau_g_G2E_FF	=	0.15;
-	float decay_term_tau_g_E2E_FF	=	0.15;
-	float decay_term_tau_g_E2E_FB	=	0.15;
-	float decay_term_tau_g_E2E_L	=	0.15;
+	float decay_term_tau_g_G2E_FF	= universal_decay_term_tau_all_synapses;
+	float decay_term_tau_g_E2E_FF	= universal_decay_term_tau_all_synapses;
+	float decay_term_tau_g_E2E_FB	= universal_decay_term_tau_all_synapses;
+	float decay_term_tau_g_E2E_L	= universal_decay_term_tau_all_synapses;
 	float decay_term_tau_g_E2I_L	=	0.002;
 	float decay_term_tau_g_I2E_L	=	0.025; //0.005;//In Ben's model, 0.005 v 0.025 and latter produced better result
 
@@ -527,7 +529,7 @@ int main (int argc, char *argv[]){
 
 	// Create the SpikingModel
 	SpikingModel* model = new SpikingModel();
-	model->SetTimestep(timestep);
+	model->SetTimestep(simulation_params.get<float>(NETWORK_PARAMS "." TIMESTEP));
 
 	LIFSpikingNeurons* lif_spiking_neurons = new LIFSpikingNeurons();
 	ImagePoissonInputSpikingNeurons* input_neurons = new ImagePoissonInputSpikingNeurons();
@@ -615,11 +617,11 @@ int main (int argc, char *argv[]){
 
 
 	conductance_spiking_synapse_parameters_struct G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS;
-	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[0] = timestep;
-	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = timestep;
+	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[0] = 0.0002; //TODO why constant?
+	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.delay_range[1] = 0.0002;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.max_number_of_connections_per_pair = 1;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.gaussian_synapses_per_postsynaptic_neuron = simulation_params.get<int>(NETWORK_PARAMS "." FAN_IN_COUNT "." G2E_FF);//fanInCount_G2E_FF;
-	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = biological_conductance_scaling_constant_lambda_G2E_FF;
+	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.biological_conductance_scaling_constant_lambda = simulation_params.get<float>(NETWORK_PARAMS "." LAYERWISE_BIO_CONDUCTANCE_SCALING "." G2E_FF); // biological_conductance_scaling_constant_lambda_G2E_FF;
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.connectivity_type = CONNECTIVITY_TYPE_GAUSSIAN_SAMPLE;
 	// In aki's model, learning on this set of synapses was off. Remove the line below to math that.
 	G2E_FF_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS.plasticity_vec.push_back(evans_stdp);

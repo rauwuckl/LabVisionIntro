@@ -1,4 +1,0 @@
-[submodule "Spike"]
-	path = Spike
-	url = https://github.com/OFTNAI/Spike.git
-	branch = nas_fix

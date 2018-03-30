@@ -1,0 +1,3 @@
+[submodule "Spike"]
+	path = Spike
+	url = https://github.com/rauwuckl/Spike.git

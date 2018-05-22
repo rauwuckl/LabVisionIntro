@@ -1,19 +1,20 @@
 # Lab Vision Model Starter Pack
-## Instalation
+## Installation
 
-Download the reposetory and spike. In the shell:   
+Download the repository and spike. In the shell:   
 `git clone --recursive -j8 https://github.com/rauwuckl/LabVisionIntro.git`  
 
 Compile it:  
-First make a folder called 'Build', then switch into it:   
-`mkdir Build; cd Build`   
+Switch into Build directory
+`cd /LabVisionIntro/Spike/Build`
+
 Now compile with   
 `cmake ..; make -j8`  
 
 ## Running the model:
 
 
-Stuff changed so no it can be run for example like:  
+Stuff changed so now it can be run for example like:  
 `./Model -n white_diamond_l_vs_r_new_inh -s ../expSpecs/white_diamond_left_vs_right.json -b 40 -q 80 -e 200 -t 1 -p ../netParams/ALS_more_syn_new_inh.json`  
 
 -n foldername  
